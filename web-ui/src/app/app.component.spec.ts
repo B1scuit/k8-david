@@ -1,18 +1,42 @@
-import { TestBed, async } from '@angular/core/testing';
+import { LayoutModule } from '@angular/cdk/layout';
+import { TestBed, ComponentFixture, async } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import {
+  MatButtonModule,
+  MatIconModule,
+  MatListModule,
+  MatSidenavModule,
+  MatToolbarModule,
+} from '@angular/material';
+
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
   beforeEach(async(() => {
     TestBed.configureTestingModule({
       imports: [
-        RouterTestingModule
+        RouterTestingModule,
+        NoopAnimationsModule,
+        LayoutModule,
+        MatButtonModule,
+        MatIconModule,
+        MatListModule,
+        MatSidenavModule,
+        MatToolbarModule,
       ],
       declarations: [
         AppComponent
       ],
     }).compileComponents();
   }));
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(NavigationComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
 
   it('should create the app', () => {
     const fixture = TestBed.createComponent(AppComponent);
