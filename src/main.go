@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./contextDAO"
+	configDAO "./contextDAO"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -14,25 +14,19 @@ import (
 )
 
 var errLog = log.New(os.Stderr, "", 0) // Initalize an error log handler
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
 
 func main() {
 	fmt.Println("Starting HTTP Server...")
 
 	r := mux.NewRouter()
 
-	// All URL's for the control panel
-	r.HandleFunc("/", redirectToCp).Methods("GET")
-	r.PathPrefix("/cp").Handler(HandleStatic())
-
 	// All API routes
-	r.HandleFunc("/api", statusOK).Methods("GET")
+	r.HandleFunc("/", statusOK).Methods("GET")
 
-	// All API endpoints for context
-	r.HandleFunc("/api/context", contextGetallContext).Methods("GET")
+	// All API endpoints for config
+	r.HandleFunc("/config", contextCurrentContext).Methods("GET")
+	r.HandleFunc("/config/view", contextConfigView).Methods("GET")
+	r.HandleFunc("/config", contextPutContext).Methods("PUT")
 
 	srv := &http.Server{
 		Handler:      r,
@@ -43,16 +37,36 @@ func main() {
 	errLog.Fatal(srv.ListenAndServe())
 }
 
-func redirectToCp(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/cp", 301)
+func contextConfigView(w http.ResponseWriter, r *http.Request) {
+	respondWithJson(w, 200, configDAO.ConfigView())
 }
 
-func HandleStatic() http.Handler {
-	return http.StripPrefix("/cp", http.FileServer(http.Dir("./static")))
+func contextPutContext(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("context")
+
+	if name == "" {
+		respondWithError(w, 422, "Context name missing")
+		return
+	}
+
+	res, err := configDAO.SetContext(name)
+
+	if err != nil {
+		respondWithError(w, 400, err.Error())
+		return
+	}
+
+	respondWithJson(w, 200, res)
 }
 
-func contextGetallContext(w http.ResponseWriter, r *http.Request) {
-	respondWithJson(w, 200, contextDAO.GetAllContexts())
+func contextCurrentContext(w http.ResponseWriter, r *http.Request) {
+	cmd, err := configDAO.CurrentContext()
+
+	if err != nil {
+		respondWithError(w, 400, err.Error())
+		return
+	}
+	respondWithJson(w, 200, cmd)
 }
 
 // Collects any responses from the response channel and JSON encodes + sends the
